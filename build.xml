@@ -1,0 +1,112 @@
+<project name="Xoridor" default="test">
+	<property name="project-short-name" value="xoridor"/>
+	<property name="src-dir" value="src"/>
+	<property name="i18n-dir" value="i18n"/>
+	<property name="icon-dir" value="icons"/>
+	<property name="snd-dir" value="sounds"/>
+	<property name="class-dir" value="bin"/>
+	<property name="api-dir" value="docs/api"/>
+	<property name="dist-dir" value="dist"/>
+	<property name="main-class" value="org.xoridor.Xoridor"/>
+	<property name="api-zip" value="dist/apidocs.zip"/>
+	<property name="testreport-dir" value="test"/>
+	<property file="build.sf.userdata"/>
+	<property file="build.version"/>
+	<target name="test" depends="dist">
+	</target>
+	<target name="jar" depends="class">
+		<mkdir dir="${dist-dir}"/>
+		<delete>
+			<fileset dir="${dist-dir}"
+   	  	         includes="**.jar"/>
+			<fileset dir="${dist-dir}"
+   	  	         includes="**.sav"/>
+		</delete>
+		<jar destfile="${dist-dir}/${project-short-name}-${version}.jar">
+			<fileset dir="${class-dir}"
+                  includes="**/*.class"/>
+			<fileset dir="."
+                  includes="${i18n-dir}/**"/>
+			<fileset dir="."
+                 includes="${snd-dir}/**"/>
+			<fileset dir="."
+                 includes="${icon-dir}/**"/>
+			<fileset dir=".">
+            	<include name="build.version"/>
+                <include name="license.txt"/>
+                <include name="credits.txt"/>
+			</fileset>
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}"/>
+				<attribute name="Built-By" value="${user-name}"/>
+			</manifest>
+		</jar>
+	</target>
+	<target name="dist" depends="jar">
+		<mkdir dir="${dist-dir}"/>
+		<zip destfile="${dist-dir}/${project-short-name}-${version}.zip">
+			<fileset dir="." defaultexcludes="yes">
+				<include name="${src-dir}/**/*.java"/>
+				<include name="${data-dir}/**"/>
+				<include name="build.xml"/>
+            	<include name="build.version"/>
+                <include name="license.txt"/>
+                <include name="credits.txt"/>
+			</fileset>
+		</zip>
+	</target>
+	<target name="class">
+		<mkdir dir="bin/"/>
+		<javac srcdir="${src-dir}"
+             destdir="${class-dir}"
+             includes="**"
+             source="1.5"
+             target="1.5"/>
+		<rmic classname="org.xoridor.net.direct.NetworkAdapterImplementation"
+   			base="${class-dir}"/>
+	</target>
+	<target name="upload" depends="dist">
+		<ftp server="upload.sf.net"
+   	   	    userid="anonymous"
+   	   	    password=""
+   	   	    remotedir="incoming">
+			<fileset dir="dist"/>
+		</ftp>
+	</target>
+	<target name="jnlp" depends="dist">
+		<exec executable="${scp-bin}" 
+			  logError="yes" 
+			  timeout="15000">
+			<arg line="${dist-dir}/${project-short-name}-${version}.jar"/>
+			<arg line="${sf-user}@${sf-host}:${sf-publicdir}${sf-targetfile}"/>
+		</exec>
+	</target>
+	<target name="clean">
+		<delete dir="bin/"/>
+	</target>
+	<target name="doc">
+		<mkdir dir="${api-dir}"/>
+		<!-- Doesn't work on helium, yet :( -->
+		<javadoc
+         destdir="${api-dir}"
+         author="false"
+         packagenames="*"
+         windowtitle="${ant.project.name} API documentation">
+			<doctitle>
+				<![CDATA[<h1>${ant.project.name}</h1>]]></doctitle>
+			<bottom>
+				<![CDATA[<small>This is licensed under the GNU General Public License (GPL) and comes with NO WARRANTY. See file license.txt for more info.</small>]]></bottom>
+			<fileset dir="${src-dir}"/>
+		</javadoc>
+		<mkdir dir="${dist-dir}"/>
+		<delete>
+			<fileset dir="${dist-dir}"
+		 	  	         includes="**.zip"/>
+		</delete>
+		<zip destfile="${api-zip}">
+			<fileset dir="." defaultexcludes="yes">
+				<include name="${api-dir}/**"/>
+			</fileset>
+		</zip>
+	</target>
+</project>
